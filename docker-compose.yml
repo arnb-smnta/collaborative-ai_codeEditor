@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  fastapi-app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./collab.db
+      - SECRET_KEY=supersecret
+      - OPENAI_API_KEY=your_openai_api_key
+    volumes:
+      - .:/app
