@@ -1,3 +1,4 @@
+from email import message
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
@@ -63,4 +64,19 @@ def get_file(
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={"file": file, "message": "File fetched succesfully"},
+    )
+
+
+@router.get("/file")
+def get_all_files(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    files = db.query(CodeFile).filter(CodeFile.user_id == user.id).all()
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="No files Found"
+        )
+
+    file_ids = [{"id": file.id} for file in files]
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"files": file_ids, message: "Files fetched succesfully"},
     )
