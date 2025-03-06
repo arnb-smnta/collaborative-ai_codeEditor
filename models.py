@@ -6,19 +6,8 @@ import datetime
 
 
 from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    ForeignKey,
-    Text,
-    DateTime,
-    TIMESTAMP,
     Boolean,
 )
-from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from db import Base
-import datetime
 
 
 class User(Base):

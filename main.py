@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 from routes import users, files, collaboration, ai
 import os
 from db import engine, Base
+from fastapi.openapi.utils import get_openapi
+import yaml
 
 Base.metadata.create_all(bind=engine)
 
@@ -35,6 +37,18 @@ def root():
         status_code=status.HTTP_200_OK,
         content={"message": "Welcome to the real time Code Editor with AI support"},
     )
+
+
+@app.get("/openapi.yaml")
+async def get_openapi_yaml():
+    openapi_json = get_openapi(
+        title="API Yaml file",
+        version="1.0.0",
+        description="This is an automatically generated OpenAPI schema .",
+        routes=app.routes,
+    )
+    openapi_yaml = yaml.dump(openapi_json, default_flow_style=False)
+    return openapi_yaml
 
 
 if __name__ == "__main__":
