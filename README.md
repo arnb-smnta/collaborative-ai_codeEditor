@@ -2,7 +2,7 @@
 
 ## 📌 Overview
 
-Welcome to the **FastAPI Backend**! This API provides authentication, AI-powered debugging, and file management functionalities. Designed with scalability and security in mind, it leverages **OAuth2 authentication** and follows best practices for modern web applications.
+Welcome to the **collaborative-ai_codeEditor**! This API provides authentication, AI-powered debugging, and file management functionalities. Designed with scalability and security in mind, it leverages **OAuth2 authentication** and follows best practices for modern web applications.
 
 ## 🚀 Features
 
@@ -27,8 +27,14 @@ Ensure you have the following installed:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-repo/fastapi-backend.git
-cd fastapi-backend
+git clone https://github.com/your-repo/collaborative-ai_codeEditor.git
+cd collaborative-ai_codeEditor
+
+#Set up Environment
+
+python3 -m venv .venv
+source .venv/bin/activate
+
 
 # Install dependencies
 pip install -r requirements.txt
@@ -65,7 +71,7 @@ uvicorn main:app --reload
 
 ## 🔗 API Documentation
 
-This API uses OpenAPI for auto-generated documentation. You can access it at:
+This API uses OpenAPI for auto-generated documentation. You can access it at local:
 
 - **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **YAML Schema**: [http://127.0.0.1:8000/openapi.yaml](http://127.0.0.1:8000/openapi.yaml)
