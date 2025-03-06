@@ -1,40 +1,71 @@
 from fastapi.responses import JSONResponse
-import openai
+from openai import OpenAI
 from fastapi import APIRouter, Depends, HTTPException, status
 import os
 from sqlalchemy.orm import Session
 
-from auth import get_db
+from auth import get_db, get_current_user
 from models import CodeFile
-
-# AI mainly supports Python and JS codes prompt is written accordingly
-
 
 router = APIRouter()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize OpenAI client
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise ValueError("OPENAI_API_KEY environment variable not set")
+
+client = OpenAI(api_key=openai_api_key)
 
 
 def detect_language(code: str) -> str:
     """
     Detects if the code is written in Python or JavaScript based on common syntax patterns.
     """
-    if "import " in code or "def " in code or "class " in code or "print(" in code:
+    # More robust language detection
+    python_indicators = [
+        "import ",
+        "def ",
+        "class ",
+        "print(",
+        "#",
+        "if __name__ ==",
+        "->",
+        ":",
+    ]
+    js_indicators = [
+        "function ",
+        "const ",
+        "let ",
+        "var ",
+        "=>",
+        "document.",
+        "console.log",
+        "export ",
+        "import {",
+    ]
+
+    python_score = sum(1 for indicator in python_indicators if indicator in code)
+    js_score = sum(1 for indicator in js_indicators if indicator in code)
+
+    if python_score > js_score:
         return "Python"
-    elif "function " in code or "const " in code or "let " in code or "=>" in code:
+    elif js_score > python_score:
         return "JavaScript"
     else:
         return "Unknown"
 
 
 @router.post("/debug/{file_id}")
-def debug_code(file_id: int, db: Session = Depends(get_db)):
+def debug_code(
+    file_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)
+):
     code_file = db.query(CodeFile).filter(CodeFile.id == file_id).first()
 
     if not code_file:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
         )
+
     if not code_file.content.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Code file is empty"
@@ -108,10 +139,10 @@ def debug_code(file_id: int, db: Session = Depends(get_db)):
         **Now, analyze the code and provide a debugging report.**
         """
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4", messages=[{"role": "system", "content": prompt}]
         )
-        suggestions = response["choices"][0]["message"]["content"]
+        suggestions = response.choices[0].message.content
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
