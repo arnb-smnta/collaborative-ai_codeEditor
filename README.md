@@ -4,7 +4,11 @@
 
 Explore the API via OpenAPI documentation:
 
-- **Swagger UI**: [Click Here](https://collaborative-ai-codeeditor.onrender.com/docs)
+### **Swagger UI**
+
+🔗 **Open API Documentation**[Click here](https://collaborative-ai-codeeditor.onrender.com/docs){:target="\_blank"}  
+_(Please be patient, as it may take a minute to load since it's hosted on Render's free tier.)_ 🚀
+
 - **YAML Schema**: [Click Here](https://collaborative-ai-codeeditor.onrender.com/openapi.yaml)
 
 Welcome to the **Collaborative AI Code Editor API**! This API is designed for real-time collaborative coding with **AI-powered debugging**, **file management**, and **secure authentication**. Built with **FastAPI**, it ensures high performance, scalability, and ease of integration.
