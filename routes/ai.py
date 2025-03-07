@@ -68,7 +68,10 @@ def detect_language(code: str) -> str:
 @router.post("/debug/{file_id}")
 @limiter.limit("10/minute; 100/day")  # Allow 10 requests per minute, 100 per day
 async def debug_code(
-    file_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)
+    request: Request,
+    file_id: int,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
 ):
     """AI-powered debugging for Python and JavaScript code."""
     code_file = db.query(CodeFile).filter(CodeFile.id == file_id).first()
