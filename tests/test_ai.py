@@ -1,9 +1,13 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from fastapi import status
 from sqlalchemy.orm import Session
-from main import app  # Adjust import path according to your project structure
+from main import app
 from routes.ai import detect_language
 from models import CodeFile
 

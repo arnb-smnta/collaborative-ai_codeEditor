@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from typing import List, Optional
 from pydantic import BaseModel
 from auth import get_current_user, get_db
 from models import CodeFile
@@ -19,6 +20,16 @@ class FileResponse(BaseModel):
     user_id: int
 
 
+class FileListResponse(BaseModel):
+    id: int
+    content: str
+
+
+class PaginationParams(BaseModel):
+    skip: int = 0
+    limit: int = 100
+
+
 @router.post("/")
 def create_file(db: Session = Depends(get_db), user=Depends(get_current_user)):
     try:
@@ -26,6 +37,7 @@ def create_file(db: Session = Depends(get_db), user=Depends(get_current_user)):
         db.add(new_file)
         db.commit()
         db.refresh(new_file)
+
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
             content={
@@ -34,7 +46,7 @@ def create_file(db: Session = Depends(get_db), user=Depends(get_current_user)):
                     "content": new_file.content,
                     "user_id": new_file.user_id,
                 },
-                "message": "File successfully created",
+                "message": "Code File successfully created",
             },
         )
     except SQLAlchemyError as e:
@@ -57,21 +69,29 @@ def update_file(
 
         if not file:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Code File not found"
             )
 
         if file.user_id != user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Not authorized to update this file",
             )
 
         file.content = file_data.content
         db.commit()
         db.refresh(file)
+
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "File successfully updated"},
+            content={
+                "file": {
+                    "id": file.id,
+                    "content": file.content,
+                    "user_id": file.user_id,
+                },
+                "message": "Code File successfully updated",
+            },
         )
     except SQLAlchemyError as e:
         db.rollback()
@@ -92,7 +112,7 @@ def get_file(
 
         if not file:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Code File not found"
             )
 
         if file.user_id != user.id:
@@ -109,7 +129,7 @@ def get_file(
                     "content": file.content,
                     "user_id": file.user_id,
                 },
-                "message": "File fetched successfully",
+                "message": "Code File fetched successfully",
             },
         )
     except SQLAlchemyError as e:
@@ -120,20 +140,41 @@ def get_file(
 
 
 @router.get("/")
-def get_all_files(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def get_all_files(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    # pagination suppotred
     try:
-        files = db.query(CodeFile).filter(CodeFile.user_id == user.id).all()
+        query = db.query(CodeFile).filter(CodeFile.user_id == user.id)
+        total_count = query.count()
+
+        files = query.offset(skip).limit(limit).all()
 
         if not files:
             return JSONResponse(
                 status_code=status.HTTP_200_OK,
-                content={"files": [], "message": "No files found"},
+                content={
+                    "files": [],
+                    "total": 0,
+                    "skip": skip,
+                    "limit": limit,
+                    "message": "No code files found",
+                },
             )
 
         file_list = [{"id": file.id, "content": file.content} for file in files]
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"files": file_list, "message": "Files fetched successfully"},
+            content={
+                "files": file_list,
+                "total": total_count,
+                "skip": skip,
+                "limit": limit,
+                "message": "Files fetched successfully",
+            },
         )
     except SQLAlchemyError as e:
         raise HTTPException(
@@ -148,17 +189,18 @@ def delete_file(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
+    # Delete a specific file if owned by the authenticated user.
     try:
         file = db.query(CodeFile).filter(CodeFile.id == file_id).first()
 
         if not file:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail="File not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="Code File not found"
             )
 
         if file.user_id != user.id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Not authorized to delete this file",
             )
 
@@ -167,9 +209,11 @@ def delete_file(
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "File successfully deleted"},
+            content={
+                "id": file_id,
+                "message": "Code File successfully deleted",
+            },
         )
-
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(

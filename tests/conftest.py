@@ -1,16 +1,19 @@
+import sys
 import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from auth import get_db
 from models import Base
+from auth import get_db
 from main import app
 from fastapi.testclient import TestClient
 
 # Set up test database (SQLite for testing)
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 if not TEST_DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set in the environment variables")
+    raise ValueError("TEST_DATABASE_URL is not set in the environment variables")
 
 
 engine = create_engine(TEST_DATABASE_URL)
