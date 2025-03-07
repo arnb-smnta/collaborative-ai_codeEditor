@@ -1,3 +1,4 @@
+import os
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -6,13 +7,17 @@ from models import Base
 from main import app
 from fastapi.testclient import TestClient
 
-# ✅ Set up test database (SQLite for testing)
-TEST_DATABASE_URL = "sqlite:///./test.db"
-engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
+# Set up test database (SQLite for testing)
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+if not TEST_DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set in the environment variables")
+
+
+engine = create_engine(TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
-# ✅ Override FastAPI's database dependency
+# Override FastAPI's database dependency
 @pytest.fixture(scope="session")
 def db_session():
     """Provides a fresh test database session"""

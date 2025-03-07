@@ -30,17 +30,46 @@ class UserUpdate(BaseModel):
     is_admin: Optional[bool] = None
 
 
-@router.post("/signup")
+@router.post("/register")
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    """
+    Allows anyone to create an account, but all users will be non-admin.
+    """
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already registered",
+        )
+
+    new_user = User(
+        username=user_data.username,
+        hashed_password=get_password_hash(user_data.password),
+        is_admin=False,  # Force all registered users to be non-admin
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return JSONResponse(
+        status_code=status.HTTP_201_CREATED,
+        content={"message": "User created successfully", "user_id": new_user.id},
+    )
+
+
+@router.post("/signup-admin")
 def signup(
     user_data: UserCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Check if user is admin if trying to create an admin user
-    if user_data.is_admin and (not current_user or current_user.is_admin is not True):
+    """
+    Allows an authenticated admin to create new users.
+    """
+    if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admins can create admin users",
+            detail="Only admins can create new users",
         )
 
     existing_user = db.query(User).filter(User.username == user_data.username).first()
@@ -50,18 +79,22 @@ def signup(
             detail="Username already registered",
         )
 
-    hashed_password = get_password_hash(user_data.password)
     new_user = User(
         username=user_data.username,
-        hashed_password=hashed_password,
+        hashed_password=get_password_hash(user_data.password),
         is_admin=user_data.is_admin,
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
     return JSONResponse(
         status_code=status.HTTP_201_CREATED,
-        content={"message": "User created successfully", "user_id": new_user.id},
+        content={
+            "message": "User created successfully",
+            "user_id": new_user.id,
+            "username": user_data.username,
+        },
     )
 
 

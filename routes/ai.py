@@ -11,20 +11,19 @@ from slowapi.middleware import SlowAPIMiddleware
 from auth import get_db, get_current_user
 from models import CodeFile
 
-# Initialize router
+
 router = APIRouter()
 
-# Initialize OpenAI client
+
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     raise ValueError("OPENAI_API_KEY environment variable not set")
 
 client = OpenAI(api_key=openai_api_key)
 
-# Initialize rate limiter based on IP address
 limiter = Limiter(
     key_func=get_remote_address,
-    default_limits=["50/day", "5/minute"],  # Global default limits
+    default_limits=["50/day", "5/minute"],
     storage_uri="memory://",
 )
 
@@ -66,7 +65,7 @@ def detect_language(code: str) -> str:
 
 
 @router.post("/debug/{file_id}")
-@limiter.limit("10/minute; 100/day")  # Allow 10 requests per minute, 100 per day
+@limiter.limit("10/minute; 100/day")
 async def debug_code(
     request: Request,
     file_id: int,
@@ -170,13 +169,11 @@ async def debug_code(
         )
 
 
-# Function to integrate with FastAPI app
 def setup_rate_limiting(app: FastAPI):
     # Add rate limiting middleware
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
 
-    # Register the rate limit exceeded handler for the entire app (not just the router)
     @app.exception_handler(RateLimitExceeded)
     async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
         return JSONResponse(
