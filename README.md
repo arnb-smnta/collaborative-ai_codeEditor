@@ -4,6 +4,21 @@
 
 Welcome to the **Collaborative AI Code Editor API**! This powerful platform enables real-time collaborative coding with AI-powered debugging capabilities, integrated file management, and secure authentication. Built with FastAPI, this API delivers high performance, excellent scalability, and seamless integration options.
 
+## 🔗 API Documentation
+
+### 🔹 Swagger UI
+
+<a href="https://collaborative-ai-codeeditor.onrender.com/docs" target="_blank">Click Here</a>  
+_(Please be patient, as it may take a minute to load since it's hosted on Render's free tier.)_
+
+### 🔹 YAML Schema
+
+<a href="https://collaborative-ai-codeeditor.onrender.com/openapi.yaml" target="_blank">Click Here</a>
+
+### 🔹 Postman HTTP REST APIs
+
+<a href="https://documenter.getpostman.com/view/27224450/2sAYdoEmwb#89dab365-ef56-4af9-8246-1ef5698b6122" target="_blank">Click Here</a>
+
 ## 🚀 Key Features
 
 - **Real-Time Collaboration**: Multiple users can edit code simultaneously with live cursor tracking and conflict resolution
@@ -55,7 +70,7 @@ Welcome to the **Collaborative AI Code Editor API**! This powerful platform enab
                                            ▼  │
                                ┌─────────────────────────────┐          ┌───────────────────┐
                                │                             │          │                   │
-                               │   AI Debugging Service      │◄────────►│   OpenAI API      │
+                               │   AI Debugging Service      │◄────────►│ OpenAI/Gemini API │
                                │                             │          │                   │
                                └─────────────────────────────┘          └───────────────────┘
                                            │  ▲
@@ -67,15 +82,6 @@ Welcome to the **Collaborative AI Code Editor API**! This powerful platform enab
                                │                             │
                                └─────────────────────────────┘
 ```
-
-## 🔗 API Documentation
-
-Explore the API via OpenAPI documentation:
-
-**Swagger UI**: [https://collaborative-ai-codeeditor.onrender.com/docs](https://collaborative-ai-codeeditor.onrender.com/docs)  
-_(Please be patient, as it may take a minute to load since it's hosted on Render's free tier.)_
-
-**YAML Schema**: [https://collaborative-ai-codeeditor.onrender.com/openapi.yaml](https://collaborative-ai-codeeditor.onrender.com/openapi.yaml)
 
 ## 📊 Database Schema
 
@@ -208,6 +214,86 @@ Configure the following environment variables for deployment:
 | **WebSocket** | `/collaborate/ws/{file_id}`                      | Real-time collaborative code editing                                     |
 | **WebSocket** | `/collaborate/notifications/{file_id}`           | Real-time notifications for specific file id connected users             |
 | **WebSocket** | `collaborate/notifications/subscribe/{file_id}"` | Real-tme notification sub for differnt files if any one wants to monitor |
+
+Here’s a well-structured **Markdown documentation** for your WebSocket API that you can use in Postman or any other documentation tool:
+
+---
+
+# **📡 WebSocket API Documentation**
+
+## **🔗 Connection Endpoints**
+
+Postman supports WebSockets (currently in beta). To test WebSocket connections in Postman:
+
+1. **Open Postman** and press `Ctrl + N` (or `Cmd + N` on macOS) to create a new request.
+2. Select **"WebSocket Request"** from the available options.
+3. Enter one of the WebSocket endpoints listed below.
+4. Click **Connect** to establish the WebSocket connection.
+5. Send and receive messages in real-time.
+
+## **🌍 WebSocket Endpoints**
+
+### **1️⃣ Collaboration WebSocket**
+
+- **URL:**
+  ```ws
+  ws://localhost:8000/collaborate/ws/2
+  ```
+- **Description:**  
+  This WebSocket connection allows users to collaborate in real-time on shared documents or projects.
+
+- **Example Message Sent by Client:**
+  ```json
+  {
+    "event": "edit",
+    "user_id": 2,
+    "content": "Updated text"
+  }
+  ```
+- **Example Message Received:**
+  ```json
+  {
+    "event": "update",
+    "user_id": 5,
+    "content": "User 5 made an update"
+  }
+  ```
+
+---
+
+### **2️⃣ Notifications WebSocket**
+
+- **URL:**
+  ```ws
+  ws://localhost:8000/collaborate/notifications/2
+  ```
+- **Description:**  
+  This WebSocket provides real-time notifications for updates, messages, or alerts related to the user.
+
+- **Example Message Sent by Client:**
+  ```json
+  {
+    "event": "subscribe",
+    "user_id": 2
+  }
+  ```
+- **Example Message Received:**
+  ```json
+  {
+    "event": "new_notification",
+    "message": "You have a new comment on your document"
+  }
+  ```
+
+---
+
+## **📖 Notes**
+
+- Ensure your local WebSocket server is running before testing.
+- Postman WebSocket support is still in **beta**, so some features might change.
+- You can write test scripts in Postman to automate sending/receiving messages.
+
+---
 
 ## 💻 Real-Time Collaboration Implementation
 
