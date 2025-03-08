@@ -14,7 +14,7 @@ active_connections: Dict[int, Set[WebSocket]] = {}
 notification_connections: Dict[WebSocket, Set[int]] = {}
 
 message_history: Dict[int, Deque[float]] = {}
-# Rate limit settings
+
 MAX_MESSAGES = 10  # Maximum messages per time window
 TIME_WINDOW = 1.0  # Time window in seconds
 logger = logging.getLogger("websockets")
@@ -192,11 +192,10 @@ async def subscribe_to_file(websocket: WebSocket, file_id: int):
 async def broadcast_notification(
     notification_data: dict, file_id: int = None, exclude: WebSocket = None
 ):
-    """
-    Send a notification to relevant notification clients
-    - If file_id is provided, only send to clients interested in that file
-    - If file_id is None, send to all notification clients (for system-wide notifications)
-    """
+    # Send a notification to relevant notification clients
+    # - If file_id is provided, only send to clients interested in that file
+    # - If file_id is None, send to all notification clients (for system-wide notifications)
+
     if not notification_connections:
         return
 
@@ -216,7 +215,7 @@ async def broadcast_notification(
 
 
 def cleanup_connection(websocket: WebSocket, file_id: int):
-    """Helper function to clean up connection resources"""
+    # Helper function to clean up connection resource
     websocket_id = id(websocket)
 
     if file_id in active_connections:
@@ -229,7 +228,7 @@ def cleanup_connection(websocket: WebSocket, file_id: int):
 
 
 def cleanup_notification_connection(websocket: WebSocket):
-    """Helper function to clean up notification connection resources"""
+    # Helper function to clean up notification connection resources
     websocket_id = id(websocket)
 
     if websocket in notification_connections:

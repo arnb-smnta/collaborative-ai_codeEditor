@@ -18,16 +18,16 @@ from models import CodeFile
 
 router = APIRouter()
 
-# Set up logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# OpenAI configuration
+
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
     logger.warning("OPENAI_API_KEY environment variable not set, will rely on Gemini")
 
-# Gemini configuration
+
 gemini_api_key = os.getenv("GEMINI_API_KEY")
 if not gemini_api_key:
     logger.warning(
@@ -36,7 +36,7 @@ if not gemini_api_key:
 else:
     genai.configure(api_key=gemini_api_key)
 
-# Initialize OpenAI client if possible
+
 openai_client = None
 if openai_api_key:
     openai_client = OpenAI(api_key=openai_api_key)
@@ -93,7 +93,7 @@ async def check_openai_limit():
         return False
 
     try:
-        # Make a lightweight models.list call to check if rate limits are available
+        # check if rate limits are available
         # This consumes fewer tokens than a full completion request
         async with httpx.AsyncClient(timeout=5.0) as client:
             response = await client.get(
@@ -106,7 +106,7 @@ async def check_openai_limit():
                 logger.info("OpenAI rate limits exceeded, switching to Gemini")
                 return False
 
-            # Check for other error responses
+            # Check for other error responses other tah 200
             if response.status_code != 200:
                 logger.warning(
                     f"OpenAI API returned status code {response.status_code}"
@@ -156,7 +156,7 @@ async def debug_code(
     db: Session = Depends(get_db),
     user=Depends(get_current_user),
 ):
-    """AI-powered debugging for Python and JavaScript code."""
+    # debugging for Python and JavaScript code.
     code_file = db.query(CodeFile).filter(CodeFile.id == file_id).first()
 
     if not code_file:
@@ -244,7 +244,7 @@ async def debug_code(
         ai_provider_used = "OpenAI"
         suggestions, error = await get_openai_response(prompt)
 
-        # If the request itself failed, try Gemini
+        # If the request itself failed, try Gemini 2nd option
         if not suggestions:
             logger.info(
                 f"OpenAI request failed with error: {error}. Falling back to Gemini AI."
@@ -256,7 +256,7 @@ async def debug_code(
         ai_provider_used = "Gemini"
         suggestions, error = await get_gemini_response(prompt)
 
-    # If both services failed
+    # If both services failed or rate limit exceeded
     if not suggestions:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -274,7 +274,7 @@ async def debug_code(
 
 
 def setup_rate_limiting(app: FastAPI):
-    # Add rate limiting middleware
+    # Add rate limiting middleware specifically for this globally it is different
     app.state.limiter = limiter
     app.add_middleware(SlowAPIMiddleware)
 

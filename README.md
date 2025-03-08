@@ -203,10 +203,11 @@ Configure the following environment variables for deployment:
 
 ### Real-Time Collaboration
 
-| **Method**    | **Endpoint**                 | **Description**                             |
-| ------------- | ---------------------------- | ------------------------------------------- |
-| **WebSocket** | `/collaborate/ws/{file_id}`  | Real-time collaborative code editing        |
-| **WebSocket** | `/collaborate/notifications` | Real-time notifications (e.g., user joined) |
+| **Method**    | **Endpoint**                                     | **Description**                                                          |
+| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------ |
+| **WebSocket** | `/collaborate/ws/{file_id}`                      | Real-time collaborative code editing                                     |
+| **WebSocket** | `/collaborate/notifications/{file_id}`           | Real-time notifications for specific file id connected users             |
+| **WebSocket** | `collaborate/notifications/subscribe/{file_id}"` | Real-tme notification sub for differnt files if any one wants to monitor |
 
 ## 💻 Real-Time Collaboration Implementation
 
