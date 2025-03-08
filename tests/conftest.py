@@ -10,7 +10,7 @@ from auth import get_db
 from main import app
 from fastapi.testclient import TestClient
 
-# Set up test database (SQLite for testing)
+
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
 if not TEST_DATABASE_URL:
     raise ValueError("TEST_DATABASE_URL is not set in the environment variables")
@@ -28,7 +28,7 @@ def db_session():
     Base.metadata.create_all(bind=engine)  # Create tables
 
     session = TestingSessionLocal()
-    yield session  # Provide session to tests
+    yield session
     session.close()
 
     Base.metadata.drop_all(bind=engine)  # Cleanup after tests

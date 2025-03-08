@@ -26,7 +26,8 @@ class CodeFile(Base):
     __tablename__ = "code_files"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))  # Fix ForeignKey reference
+    title = Column(Text, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"))
     content = Column(Text, default="")
     last_updated = Column(DateTime, default=datetime.datetime.now)
 

@@ -1,5 +1,5 @@
 from fastapi.responses import JSONResponse
-from openai import OpenAI
+from openai import OpenAI, RateLimitError
 from fastapi import APIRouter, Depends, HTTPException, status, Request, FastAPI
 import os
 from sqlalchemy.orm import Session
@@ -7,6 +7,10 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from google import generativeai as genai
+import logging
+import httpx
+import json
 
 from auth import get_db, get_current_user
 from models import CodeFile
@@ -14,12 +18,28 @@ from models import CodeFile
 
 router = APIRouter()
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# OpenAI configuration
 openai_api_key = os.getenv("OPENAI_API_KEY")
 if not openai_api_key:
-    raise ValueError("OPENAI_API_KEY environment variable not set")
+    logger.warning("OPENAI_API_KEY environment variable not set, will rely on Gemini")
 
-client = OpenAI(api_key=openai_api_key)
+# Gemini configuration
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+if not gemini_api_key:
+    logger.warning(
+        "GEMINI_API_KEY environment variable not set, fallback won't be available"
+    )
+else:
+    genai.configure(api_key=gemini_api_key)
+
+# Initialize OpenAI client if possible
+openai_client = None
+if openai_api_key:
+    openai_client = OpenAI(api_key=openai_api_key)
 
 limiter = Limiter(
     key_func=get_remote_address,
@@ -62,6 +82,70 @@ def detect_language(code: str) -> str:
         if js_score > python_score
         else "Unknown"
     )
+
+
+async def check_openai_limit():
+    """
+    Check if OpenAI rate limits are available before making a full request
+    Returns True if rate limits are available, False otherwise
+    """
+    if not openai_api_key:
+        return False
+
+    try:
+        # Make a lightweight models.list call to check if rate limits are available
+        # This consumes fewer tokens than a full completion request
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {openai_api_key}"},
+            )
+
+            # If we get a 429, rate limits are exceeded
+            if response.status_code == 429:
+                logger.info("OpenAI rate limits exceeded, switching to Gemini")
+                return False
+
+            # Check for other error responses
+            if response.status_code != 200:
+                logger.warning(
+                    f"OpenAI API returned status code {response.status_code}"
+                )
+                return False
+
+            return True
+    except Exception as e:
+        logger.warning(f"Error checking OpenAI limits: {str(e)}")
+        return False
+
+
+async def get_openai_response(prompt):
+    """Get response from OpenAI API with error handling"""
+    if not openai_client:
+        return None, "OpenAI API key not configured"
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo", messages=[{"role": "system", "content": prompt}]
+        )
+        return response.choices[0].message.content, None
+    except RateLimitError:
+        return None, "Rate limit exceeded"
+    except Exception as e:
+        return None, str(e)
+
+
+async def get_gemini_response(prompt):
+    """Get response from Gemini API with error handling"""
+    if not gemini_api_key:
+        return None, "Gemini API key not configured"
+
+    try:
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content(prompt)
+        return response.text, None
+    except Exception as e:
+        return None, str(e)
 
 
 @router.post("/debug/{file_id}")
@@ -152,21 +236,41 @@ async def debug_code(
         **Now, analyze the code and provide a debugging report.**
         """
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4", messages=[{"role": "system", "content": prompt}]
-        )
-        suggestions = response.choices[0].message.content
+    # Check if OpenAI has available rate limits
+    openai_available = await check_openai_limit()
 
-        return JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={"file_id": file_id, "suggestions": suggestions},
-        )
-    except Exception as e:
+    if openai_available:
+        # Use OpenAI if rate limits are available
+        ai_provider_used = "OpenAI"
+        suggestions, error = await get_openai_response(prompt)
+
+        # If the request itself failed, try Gemini
+        if not suggestions:
+            logger.info(
+                f"OpenAI request failed with error: {error}. Falling back to Gemini AI."
+            )
+            ai_provider_used = "Gemini"
+            suggestions, error = await get_gemini_response(prompt)
+    else:
+        # Use Gemini if OpenAI rate limits are not available
+        ai_provider_used = "Gemini"
+        suggestions, error = await get_gemini_response(prompt)
+
+    # If both services failed
+    if not suggestions:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error while debugging: {str(e)}",
+            detail=f"Error with all AI providers. Last error: {error}",
         )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "file_id": file_id,
+            "suggestions": suggestions,
+            "ai_provider": ai_provider_used,
+        },
+    )
 
 
 def setup_rate_limiting(app: FastAPI):

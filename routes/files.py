@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from auth import get_current_user, get_db
 from models import CodeFile
 
@@ -11,7 +11,8 @@ router = APIRouter()
 
 
 class FileContent(BaseModel):
-    content: str
+    content: Optional[str] = Field(None, min_length=8)
+    title: Optional[str] = Field(None, min_length=8)
 
 
 class FileResponse(BaseModel):
@@ -31,9 +32,28 @@ class PaginationParams(BaseModel):
 
 
 @router.post("/")
-def create_file(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_file(
+    title: str = Body(..., embed=True),
+    db: Session = Depends(get_db),
+    user=Depends(get_current_user),
+):
+    # Validate title
+    if not title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title cannot be empty.",
+        )
+
+    # Check if the title already exists for the user
+    existing_file = db.query(CodeFile).filter_by(user_id=user.id, title=title).first()
+    if existing_file:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title must be unique for the user.",
+        )
+
     try:
-        new_file = CodeFile(user_id=user.id, content="")
+        new_file = CodeFile(user_id=user.id, title=title, content="")
         db.add(new_file)
         db.commit()
         db.refresh(new_file)
@@ -43,6 +63,7 @@ def create_file(db: Session = Depends(get_db), user=Depends(get_current_user)):
             content={
                 "newFile": {
                     "id": new_file.id,
+                    "title": new_file.title,
                     "content": new_file.content,
                     "user_id": new_file.user_id,
                 },
@@ -78,7 +99,40 @@ def update_file(
                 detail="Not authorized to update this file",
             )
 
-        file.content = file_data.content
+        # Ensure at least one of title or content is provided
+        if not file_data.title and not file_data.content:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="At least one of 'title' or 'content' must be provided.",
+            )
+
+        # Check if title is provided and validate uniqueness
+        if file_data.title:
+            if not file_data.title.strip():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Title cannot be empty.",
+                )
+
+            existing_file = (
+                db.query(CodeFile)
+                .filter(CodeFile.user_id == user.id, CodeFile.title == file_data.title)
+                .filter(CodeFile.id != file_id)  # Exclude the current file
+                .first()
+            )
+
+            if existing_file:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Title must be unique for the user.",
+                )
+
+            file.title = file_data.title  # Update title
+
+        # Update content if provided
+        if file_data.content:
+            file.content = file_data.content
+
         db.commit()
         db.refresh(file)
 
@@ -87,6 +141,7 @@ def update_file(
             content={
                 "file": {
                     "id": file.id,
+                    "title": file.title,
                     "content": file.content,
                     "user_id": file.user_id,
                 },
@@ -165,7 +220,10 @@ def get_all_files(
                 },
             )
 
-        file_list = [{"id": file.id, "content": file.content} for file in files]
+        file_list = [
+            {"id": file.id, "content": file.content, "title": file.title}
+            for file in files
+        ]
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={

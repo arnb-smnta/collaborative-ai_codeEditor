@@ -6,13 +6,67 @@ Welcome to the **Collaborative AI Code Editor API**! This powerful platform enab
 
 ## 🚀 Key Features
 
-- **User Authentication & Role Management**: Secure signup, login, and admin user management
-- **AI-Powered Code Debugging**: Analyze and improve code with AI assistance
-- **File Management System**: Create, retrieve, update, and delete files with ease
-- **OAuth2 Token-Based Authentication**: Secure API access with JWT authentication
-- **Real-Time Collaboration**: WebSockets for live editing and collaboration
-- **Auto-Generated API Documentation**: Complete OpenAPI and Swagger UI documentation
-- **Containerized Deployment**: Easy setup with Docker and Docker Compose
+- **Real-Time Collaboration**: Multiple users can edit code simultaneously with live cursor tracking and conflict resolution
+- **AI-Powered Code Debugging**: OpenAI-based analysis for syntax errors, bugs, and performance improvements
+- **User Authentication & Role Management**: Secure signup, login, and role-based access control
+- **File Management System**: Complete CRUD operations for code files
+- **WebSocket Communication**: Real-time updates and notifications across users
+- **Auto-Generated API Documentation**: Comprehensive OpenAPI and Swagger UI documentation
+- **Containerized Deployment**: Docker and Docker Compose setup for easy deployment
+
+## 🔧 Technology Stack
+
+- **Backend**: FastAPI, Pydantic, SQLAlchemy ORM
+- **Database**: PostgreSQL for persistent storage
+- **Real-Time**: WebSockets for live collaboration
+- **AI Integration**: OpenAI API for code analysis
+- **Authentication**: JWT-based OAuth2 implementation
+- **Containerization**: Docker, Docker Compose
+- **Testing**: Pytest with high coverage
+
+## 🏗️ Architecture
+
+```
+┌───────────────────┐          ┌─────────────────────────────┐
+│                   │          │                             │
+│   Client Browser  │◄────────►│   FastAPI Application       │
+│                   │          │                             │
+└───────────────────┘          └─────────────────────────────┘
+                                           │  ▲
+                                           │  │
+                                           ▼  │
+                               ┌─────────────────────────────┐
+                               │                             │
+                               │     Authentication          │
+                               │     JWT / OAuth2            │
+                               │                             │
+                               └─────────────────────────────┘
+                                           │  ▲
+                                           │  │
+                                           ▼  │
+┌───────────────────┐          ┌─────────────────────────────┐          ┌───────────────────┐
+│                   │          │                             │          │                   │
+│   WebSocket       │◄────────►│   Collaborative Editing     │◄────────►│   PostgreSQL DB   │
+│   Connection      │          │   Controller                │          │                   │
+│                   │          │                             │          └───────────────────┘
+└───────────────────┘          └─────────────────────────────┘
+                                           │  ▲
+                                           │  │
+                                           ▼  │
+                               ┌─────────────────────────────┐          ┌───────────────────┐
+                               │                             │          │                   │
+                               │   AI Debugging Service      │◄────────►│   OpenAI API      │
+                               │                             │          │                   │
+                               └─────────────────────────────┘          └───────────────────┘
+                                           │  ▲
+                                           │  │
+                                           ▼  │
+                               ┌─────────────────────────────┐
+                               │                             │
+                               │   File Management Service   │
+                               │                             │
+                               └─────────────────────────────┘
+```
 
 ## 🔗 API Documentation
 
@@ -22,6 +76,25 @@ Explore the API via OpenAPI documentation:
 _(Please be patient, as it may take a minute to load since it's hosted on Render's free tier.)_
 
 **YAML Schema**: [https://collaborative-ai-codeeditor.onrender.com/openapi.yaml](https://collaborative-ai-codeeditor.onrender.com/openapi.yaml)
+
+## 📊 Database Schema
+
+````
+User
+  - id: UUID (PK)
+  - username: String
+  - email: String
+  - hashed_password: String
+  - is_admin: Boolean
+  - created_at: DateTime
+
+CodeFile
+  - id: UUID (PK)
+  - title: String
+  - content: Text
+  - user_id: UUID (FK → User.id)
+  - created_at: DateTime
+  - updated_at: DateTime
 
 ## 📥 Local Installation & Setup
 
@@ -50,7 +123,7 @@ pip install -r requirements.txt
 
 # Run the application
 uvicorn main:app --reload
-```
+````
 
 Your API will be running at **http://127.0.0.1:8000**
 
@@ -135,6 +208,26 @@ Configure the following environment variables for deployment:
 | **WebSocket** | `/collaborate/ws/{file_id}`  | Real-time collaborative code editing        |
 | **WebSocket** | `/collaborate/notifications` | Real-time notifications (e.g., user joined) |
 
+## 💻 Real-Time Collaboration Implementation
+
+The real-time collaboration feature is implemented using WebSockets with the following key components:
+
+- **Connection Manager**: Tracks active users and their editing sessions
+- **Operational Transformation**: Resolves conflicts when multiple users edit the same section
+- **Cursor Tracking**: Shows live positions of all collaborators in the document
+- **Event Broadcasting**: Notifies all connected clients about changes in real-time
+- **Connection Recovery**: Handles reconnection and state synchronization if connection drops
+
+## 🤖 AI Debugging Integration
+
+The AI-assisted debugging feature leverages the OpenAI API to:
+
+1. Analyze submitted code for syntax errors and logical bugs
+2. Suggest performance improvements based on best practices
+3. Provide explanations for detected issues
+4. Generate sample fixes that users can accept or reject
+5. Support multiple programming languages with context-aware suggestions
+
 ## 🧪 Testing
 
 The project includes comprehensive test cases written with Pytest using a dedicated test database:
@@ -157,6 +250,16 @@ For production deployment, ensure you:
 4. Use HTTPS for all traffic
 5. Consider setting up a reverse proxy (Nginx, Traefik)
 6. Implement proper monitoring and logging
+
+## 🔄 Future Enhancements
+
+The following optional features could be implemented in future versions:
+
+1. **Caching Layer**: Redis integration for improved performance of frequent operations
+2. **Message Queue**: Implementation of RabbitMQ for handling high volumes of real-time updates
+3. **Version Control**: Git-like functionality for code file history
+4. **Extended Language Support**: Expanded AI capabilities for additional programming languages
+5. **Frontend Interface**: Dedicated UI built with a modern framework like React
 
 ## 📜 License
 
