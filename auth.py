@@ -1,3 +1,4 @@
+import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
@@ -8,6 +9,7 @@ from db import SessionLocal
 from models import User
 from sqlalchemy.orm import Session
 
+logger = logging.getLogger(__name__)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "supersecret")
 ALGORITHM = "HS256"
@@ -55,7 +57,7 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
-        print(username)
+        logger.info(f"Username of user is {username}")
         if username is None:
             raise credentials_exception
     except JWTError:
