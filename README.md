@@ -242,25 +242,6 @@ Postman supports WebSockets (currently in beta). To test WebSocket connections i
 - **Description:**  
   This WebSocket connection allows users to collaborate in real-time on shared documents or projects.
 
-- **Example Message Sent by Client:**
-  ```json
-  {
-    "event": "edit",
-    "user_id": 2,
-    "content": "Updated text"
-  }
-  ```
-- **Example Message Received:**
-  ```json
-  {
-    "event": "update",
-    "user_id": 5,
-    "content": "User 5 made an update"
-  }
-  ```
-
----
-
 ### **2️⃣ Notifications WebSocket**
 
 - **URL:**
@@ -269,23 +250,6 @@ Postman supports WebSockets (currently in beta). To test WebSocket connections i
   ```
 - **Description:**  
   This WebSocket provides real-time notifications for updates, messages, or alerts related to the user.
-
-- **Example Message Sent by Client:**
-  ```json
-  {
-    "event": "subscribe",
-    "user_id": 2
-  }
-  ```
-- **Example Message Received:**
-  ```json
-  {
-    "event": "new_notification",
-    "message": "You have a new comment on your document"
-  }
-  ```
-
----
 
 ## **📖 Notes**
 
