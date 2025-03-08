@@ -177,6 +177,10 @@ Configure the following environment variables for deployment:
 - `DATABASE_URL`: Connection string for your database
 - `SECRET_KEY`: Secret key for JWT token generation
 - `OPENAI_API_KEY`: Your OpenAI API key for AI debugging features
+- `PORT`:Specific Port
+- `TEST_DATABASE_URL`:Connection string for your Test database
+- `GEMINI_API_KEY`:Your Gemini API key for AI debugging features
+- `CORS`: Your cors origins separed by comma's
 
 ## 🔑 API Endpoints
 
