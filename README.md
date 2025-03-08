@@ -250,6 +250,8 @@ For production deployment, ensure you:
 4. Use HTTPS for all traffic
 5. Consider setting up a reverse proxy (Nginx, Traefik)
 6. Implement proper monitoring and logging
+7. uvicorn main:app --host 0.0.0.0 --port $PORT-use this as start command in the render application
+8. Dont put PORT variable in env if using render free tier to host
 
 ## 🔄 Future Enhancements
 
